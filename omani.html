@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hazard Reporting App</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+            direction: var(--dir, ltr);
+        }
+        .container {
+            max-width: 600px;
+            margin: 20px auto;
+            padding: 20px;
+            background: #ffffff; /* White from Omani flag */
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .flag {
+            width: 100px;
+            height: 50px;
+            margin: 0 auto 10px;
+        }
+        h1, h2 {
+            text-align: center;
+            color: #ce1126; /* Red from Omani flag */
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #006233; /* Green from Omani flag */
+        }
+        input, select, textarea {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        button {
+            width: 100%;
+            padding: 10px;
+            background-color: #ce1126; /* Red from Omani flag */
+            color: #ffffff; /* White from Omani flag */
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #b80f20;
+        }
+        .nav {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .nav a, .nav select {
+            margin: 0 10px;
+            text-decoration: none;
+            color: #006233; /* Green from Omani flag */
+        }
+        .nav a:hover {
+            text-decoration: underline;
+        }
+        .dashboard {
+            max-width: 800px;
+            margin: 20px auto;
+        }
+        .case-card {
+            background: #ffffff; /* White from Omani flag */
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 4px;
+            box-shadow: 0 0 5px rgba(0,0,0,0.1);
+            border-left: 5px solid #006233; /* Green from Omani flag */
+        }
+        .case-card h3 {
+            margin: 0 0 10px;
+            color: #ce1126; /* Red from Omani flag */
+        }
+        .error {
+            color: #ce1126; /* Red from Omani flag */
+            text-align: center;
+            margin-bottom: 10px;
+        }
+        .hidden {
+            display: none;
+        }
+        .language-select {
+            padding: 5px;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <svg class="flag" viewBox="0 0 300 150">
+            <!-- Omani flag: Red vertical stripe, white, red, green horizontal stripes, emblem in red stripe -->
+            <rect x="0" y="0" width="100" height="150" fill="#ce1126"/> <!-- Red vertical stripe -->
+            <rect x="100" y="0" width="200" height="50" fill="#ffffff"/> <!-- White stripe -->
+            <rect x="100" y="50" width="200" height="50" fill="#ce1126"/> <!-- Red stripe -->
+            <rect x="100" y="100" width="200" height="50" fill="#006233"/> <!-- Green stripe -->
+            <!-- Simplified national emblem (khanjar and swords) -->
+            <path d="M30 20 L40 30 L50 20 M40 30 L40 70 M20 50 L60 50" stroke="#ffffff" stroke-width="5" fill="none"/>
+        </svg>
+    </div>
+    <div id="auth-container" class="container">
+        <div id="login-form">
+            <h1 data-en="Login" data-ar="تسجيل الدخول">Login</h1>
+            <div id="login-error" class="error hidden"></div>
+            <div class="form-group">
+                <label for="login-email" data-en="Email" data-ar="البريد الإلكتروني">Email</label>
+                <input type="email" id="login-email" required>
+            </div>
+            <div class="form-group">
+                <label for="login-password" data-en="Password" data-ar="كلمة المرور">Password</label>
+                <input type="password" id="login-password" required>
+            </div>
+            <button onclick="login()" data-en="Login" data-ar="تسجيل الدخول">Login</button>
+            <div class="nav">
+                <a href="#" onclick="showSignup()" data-en="Don't have an account? Sign Up" data-ar="ليس لديك حساب؟ اشترك">Don't have an account? Sign Up</a>
+            </div>
+        </div>
+        <div id="signup-form" class="hidden">
+            <h1 data-en="Sign Up" data-ar="اشترك">Sign Up</h1>
+            <div id="signup-error" class="error hidden"></div>
+            <div class="form-group">
+                <label for="signup-email" data-en="Email" data-ar="البريد الإلكتروني">Email</label>
+                <input type="email" id="signup-email" required>
+            </div>
+            <div class="form-group">
+                <label for="signup-password" data-en="Password" data-ar="كلمة المرور">Password</label>
+                <input type="password" id="signup-password" required>
+            </div>
+            <button onclick="signup()" data-en="Sign Up" data-ar="اشترك">Sign Up</button>
+            <div class="nav">
+                <a href="#" onclick="showLogin()" data-en="Already have an account? Login" data-ar="لديك حساب بالفعل؟ تسجيل الدخول">Already have an account? Login</a>
+            </div>
+        </div>
+    </div>
+    <div id="app-container" class="container hidden">
+        <div class="nav">
+            <select id="language-select" class="language-select" onchange="changeLanguage()">
+                <option value="en">English</option>
+                <option value="ar">العربية</option>
+            </select>
+            <a href="#" onclick="showReportForm()" data-en="Report Hazard" data-ar="الإبلاغ عن خطر">Report Hazard</a>
+            <a href="#" onclick="showDashboard()" data-en="View Dashboard" data-ar="عرض لوحة التحكم">View Dashboard</a>
+            <a href="#" onclick="logout()" data-en="Logout" data-ar="تسجيل الخروج">Logout</a>
+        </div>
+        <div id="report-form">
+            <h2 data-en="Report a Hazard" data-ar="الإبلاغ عن خطر">Report a Hazard</h2>
+            <div id="report-error" class="error hidden"></div>
+            <div class="form-group">
+                <label for="hazard-type" data-en="Hazard Type" data-ar="نوع الخطر">Hazard Type</label>
+                <select id="hazard-type" required>
+                    <option value="road-damage" data-en="Road Damage" data-ar="تلف الطريق">Road Damage</option>
+                    <option value="waste-issue" data-en="Waste Issue" data-ar="مشكلة النفايات">Waste Issue</option>
+                    <option value="environmental-threat" data-en="Environmental Threat" data-ar="تهديد بيئي">Environmental Threat</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="description" data-en="Description" data-ar="الوصف">Description</label>
+                <textarea id="description" rows="4" required></textarea>
+            </div>
+            <div class="form-group">
+                <label for="location" data-en="Location" data-ar="الموقع">Location</label>
+                <input type="text" id="location" required>
+            </div>
+            <button onclick="reportHazard()" data-en="Submit Report" data-ar="إرسال التقرير">Submit Report</button>
+        </div>
+        <div id="dashboard" class="dashboard hidden">
+            <h2 data-en="Reported Hazards" data-ar="المخاطر المبلغ عنها">Reported Hazards</h2>
+            <div id="case-list"></div>
+        </div>
+    </div>
+    <script>
+        // Language translations
+        const translations = {
+            en: {
+                'login-error': 'Invalid email or password!',
+                'signup-error': 'Email already registered!',
+                'report-error': 'All fields are required!',
+                'report-success': 'Hazard reported successfully!'
+            },
+            ar: {
+                'login-error': 'البريد الإلكتروني أو كلمة المرور غير صالحة!',
+                'signup-error': 'البريد الإلكتروني مسجل بالفعل!',
+                'report-error': 'جميع الحقول مطلوبة!',
+                'report-success': 'تم الإبلاغ عن الخطر بنجاح!'
+            }
+        };
+
+        // Initialize local storage for users and hazards if not exists
+        if (!localStorage.getItem('users')) {
+            localStorage.setItem('users', JSON.stringify([]));
+        }
+        if (!localStorage.getItem('hazards')) {
+            localStorage.setItem('hazards', JSON.stringify([]));
+        }
+        if (!localStorage.getItem('currentUser')) {
+            localStorage.setItem('currentUser', '');
+        }
+        if (!localStorage.getItem('language')) {
+            localStorage.setItem('language', 'en');
+        }
+
+        // Set initial language
+        document.getElementById('language-select').value = localStorage.getItem('language');
+        changeLanguage();
+
+        function changeLanguage() {
+            const lang = document.getElementById('language-select').value;
+            localStorage.setItem('language', lang);
+            document.documentElement.style.setProperty('--dir', lang === 'ar' ? 'rtl' : 'ltr');
+            
+            // Update all elements with data-en and data-ar attributes
+            document.querySelectorAll('[data-en][data-ar]').forEach(element => {
+                element.textContent = element.getAttribute(`data-${lang}`);
+            });
+            
+            // Update select options
+            document.querySelectorAll('#hazard-type option').forEach(option => {
+                option.textContent = option.getAttribute(`data-${lang}`);
+            });
+
+            // Refresh dashboard to update displayed cases
+            if (!document.getElementById('dashboard').classList.contains('hidden')) {
+                displayCases();
+            }
+        }
+
+        function showLogin() {
+            document.getElementById('login-form').classList.remove('hidden');
+            document.getElementById('signup-form').classList.add('hidden');
+            document.getElementById('auth-container').classList.remove('hidden');
+            document.getElementById('app-container').classList.add('hidden');
+            clearErrors();
+        }
+
+        function showSignup() {
+            document.getElementById('signup-form').classList.remove('hidden');
+            document.getElementById('login-form').classList.add('hidden');
+            document.getElementById('auth-container').classList.remove('hidden');
+            document.getElementById('app-container').classList.add('hidden');
+            clearErrors();
+        }
+
+        function showReportForm() {
+            document.getElementById('report-form').classList.remove('hidden');
+            document.getElementById('dashboard').classList.add('hidden');
+            clearErrors();
+        }
+
+        function showDashboard() {
+            document.getElementById('dashboard').classList.remove('hidden');
+            document.getElementById('report-form').classList.add('hidden');
+            displayCases();
+            clearErrors();
+        }
+
+        function clearErrors() {
+            document.getElementById('login-error').classList.add('hidden');
+            document.getElementById('signup-error').classList.add('hidden');
+            document.getElementById('report-error').classList.add('hidden');
+        }
+
+        function signup() {
+            const email = document.getElementById('signup-email').value;
+            const password = document.getElementById('signup-password').value;
+            const users = JSON.parse(localStorage.getItem('users'));
+            const errorDiv = document.getElementById('signup-error');
+            const lang = localStorage.getItem('language');
+
+            if (users.find(user => user.email === email)) {
+                errorDiv.textContent = translations[lang]['signup-error'];
+                errorDiv.classList.remove('hidden');
+                return;
+            }
+
+            users.push({ email, password });
+            localStorage.setItem('users', JSON.stringify(users));
+            localStorage.setItem('currentUser', email);
+            document.getElementById('signup-email').value = '';
+            document.getElementById('signup-password').value = '';
+            showReportForm();
+            document.getElementById('auth-container').classList.add('hidden');
+            document.getElementById('app-container').classList.remove('hidden');
+        }
+
+        function login() {
+            const email = document.getElementById('login-email').value;
+            const password = document.getElementById('login-password').value;
+            const users = JSON.parse(localStorage.getItem('users'));
+            const errorDiv = document.getElementById('login-error');
+            const lang = localStorage.getItem('language');
+
+            const user = users.find(user => user.email === email && user.password === password);
+            if (!user) {
+                errorDiv.textContent = translations[lang]['login-error'];
+                errorDiv.classList.remove('hidden');
+                return;
+            }
+
+            localStorage.setItem('currentUser', email);
+            document.getElementById('login-email').value = '';
+            document.getElementById('login-password').value = '';
+            showReportForm();
+            document.getElementById('auth-container').classList.add('hidden');
+            document.getElementById('app-container').classList.remove('hidden');
+        }
+
+        function logout() {
+            localStorage.setItem('currentUser', '');
+            showLogin();
+        }
+
+        function reportHazard() {
+            const hazardType = document.getElementById('hazard-type').value;
+            const description = document.getElementById('description').value;
+            const location = document.getElementById('location').value;
+            const currentUser = localStorage.getItem('currentUser');
+            const errorDiv = document.getElementById('report-error');
+            const lang = localStorage.getItem('language');
+
+            if (!hazardType || !description || !location) {
+                errorDiv.textContent = translations[lang]['report-error'];
+                errorDiv.classList.remove('hidden');
+                return;
+            }
+
+            const hazards = JSON.parse(localStorage.getItem('hazards'));
+            hazards.push({
+                id: Date.now(),
+                user: currentUser,
+                type: hazardType,
+                description,
+                location,
+                date: new Date().toLocaleString()
+            });
+            localStorage.setItem('hazards', JSON.stringify(hazards));
+            document.getElementById('hazard-type').value = 'road-damage';
+            document.getElementById('description').value = '';
+            document.getElementById('location').value = '';
+            alert(translations[lang]['report-success']);
+        }
+
+        function displayCases() {
+            const hazards = JSON.parse(localStorage.getItem('hazards'));
+            const caseList = document.getElementById('case-list');
+            const lang = localStorage.getItem('language');
+            caseList.innerHTML = '';
+            const typeTranslations = {
+                'road-damage': { en: 'Road Damage', ar: 'تلف الطريق' },
+                'waste-issue': { en: 'Waste Issue', ar: 'مشكلة النفايات' },
+                'environmental-threat': { en: 'Environmental Threat', ar: 'تهديد بيئي' }
+            };
+            hazards.forEach(hazard => {
+                const card = document.createElement('div');
+                card.className = 'case-card';
+                card.innerHTML = `
+                    <h3>${typeTranslations[hazard.type][lang]}</h3>
+                    <p><strong>${lang === 'en' ? 'Description' : 'الوصف'}:</strong> ${hazard.description}</p>
+                    <p><strong>${lang === 'en' ? 'Location' : 'الموقع'}:</strong> ${hazard.location}</p>
+                    <p><strong>${lang === 'en' ? 'Reported by' : 'تم الإبلاغ بواسطة'}:</strong> ${hazard.user}</p>
+                    <p><strong>${lang === 'en' ? 'Date' : 'التاريخ'}:</strong> ${hazard.date}</p>
+                `;
+                caseList.appendChild(card);
+            });
+        }
+
+        // Check if user is already logged in
+        if (localStorage.getItem('currentUser')) {
+            document.getElementById('auth-container').classList.add('hidden');
+            document.getElementById('app-container').classList.remove('hidden');
+            showReportForm();
+        }
+    </script>
+</body>
+</html>
